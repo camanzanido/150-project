@@ -1,12 +1,74 @@
 library(shiny)
+library(bslib)
+#library(shinythemes)
 source("data.R")
 source("ManzanidoEx05.R")
 source("init_matrix.R")
 source("result.R")
 # UI
-ui = fluidPage(
-  titlePanel(div(class="title","Diet Problem Solver")),
-  
+ui =page_navbar(
+  # theme = shinytheme("united"),
+  #titlePanel(div(class="title","Diet Problem Solver")),
+  title = "Diet Problem Solver",
+  nav_panel("Main", 
+          fluidRow(
+            fluidRow(
+              card(
+                card_header("Select Foods"), 
+                card_body(
+                  div(class = "custom-checkbox-group",
+                      checkboxGroupInput("selected_foods", 
+                                         label = NULL,
+                                         choices = foods,
+                                         selected = character(0),
+                                         inline=TRUE)
+                  ),
+                )
+              ),
+              layout_columns(
+                actionButton("clear", "Reset", class = "btn-warning"),
+                actionButton("select_all", "Select All", class = "btn-success"),
+                actionButton("optimize", "Optimize Diet", class = "btn-primary")
+              )
+              
+            ),
+            
+            layout_columns(
+              card(
+                card_header("Selected Foods"), 
+                card_body(div(class = "table-info", tableOutput("selected_table")))
+              ),
+              fluidRow(
+                card(uiOutput("optimization_result_ui"),),
+                
+                card(
+                  card_header("Optimized menu"), 
+                  card_body(
+                    tableOutput("new_menu"))
+                )
+              ),
+ 
+            )
+          )),
+  nav_panel("Details",
+    fluidRow(
+      card(
+        card_header("Final Solution"),
+        card_body(
+          tableOutput("finalSol")
+        )
+        
+      ),
+      card(
+        card_header("Details"),
+        card_body(
+          tableOutput("iterations"),)
+      ),
+    )
+
+    
+  ),
+
   tags$style(HTML("
     .custom-checkbox-group {
         display: flex;
@@ -18,87 +80,38 @@ ui = fluidPage(
     .checkbox-inline {
     margin:20px;
     }
+   .infeasible-result {
+     background-color: #f8d7da;
+     color: #842029;
+   }
+     table.table-info {
+    background-color: #d9edf7; 
+    color: #31708f;
+     }
+  
 
-    .optimization-result {
-        padding: 20px;
-        margin: 15px 0;
-        background-color: #d1e7dd;
-        border-radius: 8px;
-        color: #0f5132;
-        text-align: center;
-        font-size: 1.2em;
-        font-weight: 500;
-      }
-      
-    .infeasible-result {
-        background-color: #f8d7da;
-        color: #842029;
-      }
-  ")),
-  # Top selection panel
-  fluidRow(
-    column(12,
-           wellPanel(
-             h4("Select Foods"),
-             div(class = "custom-checkbox-group",
-                 checkboxGroupInput("selected_foods", 
-                                    label = NULL,
-                                    choices = foods,
-                                    selected = character(0),
-                                    inline=TRUE)
-             )
-           )
-    )
-  ),
-  
-  # Buttons row
-  fluidRow(
-    column(12,
-           div(style = "text-align: center; margin: 10px 0;",
-               actionButton("clear", "Reset", class = "btn-warning"),
-               actionButton("select_all", "Select All", class = "btn-success"),
-               actionButton("optimize", "Optimize Diet", class = "btn-primary")
-           )
-    )
-  ),
-  
-  # Selected foods table
-  fluidRow(
-    column(12,
-           # h3("Selected Foods"),
-           tableOutput("selected_table"),
-           uiOutput("optimization_result_ui"),
-           tableOutput("new_menu"),
-           # verbatimTextOutput("finalSol")
-           
-    )
-  ),
-  # Add this to your existing UI definition
-  fluidRow(
-    column(12,
-           h3("Simplex Iterations"),
-           tableOutput("iterations")
-    )
-  ),
-  # Add this to your existing UI definition
-  fluidRow(
-    column(12,
-           h3("Final Solution"),
-           tableOutput("finalSol")
-    )
-  )
+  "))
+  # .optimization-result {
+  #   padding: 20px;
+  #   margin: 15px 0;
+  #   background-color: #d1e7dd;
+  #     border-radius: 8px;
+  #   color: #0f5132;
+  #     text-align: center;
+  #   font-size: 1.2em;
+  #   font-weight: 500;
+  # }
+  # 
+  # .infeasible-result {
+  #   background-color: #f8d7da;
+  #     color: #842029;
+  # }
 )
 # Server
 server = function(input, output, session) {
   
   selected = reactiveVal(character(0)) # create reactive value object for the user 
-  
-  iterationData = reactiveValues(
-    tableaus = list(), # store intermediate tableaus
-    finalSolution = NULL,
-    finalCost = NULL,
-    message = NULL
-  )
+
   # event handler for the selecting foods
   observeEvent(input$selected_foods, {
     selected(input$selected_foods)
@@ -109,6 +122,10 @@ server = function(input, output, session) {
     selected(character(0))
     updateCheckboxGroupInput(session, "selected_foods", 
                              selected = character(0))
+    output$optimization_result_ui = renderUI(NULL)
+    output$new_menu = renderTable(NULL)
+    output$iterations = renderUI(NULL)
+    output$finalSol = renderTable(NULL)
   })
   
   # event handler for the select all button
@@ -119,24 +136,6 @@ server = function(input, output, session) {
                              selected = foods)
   })
   
-  observe({
-    lapply(seq_along(iterationData$tableaus), function(i) {
-      local({
-        iteration = i
-        output[[paste0("tableau_", iteration)]] = renderTable({
-          iterationData$tableaus[[iteration]]
-        })
-      })
-    })
-  })
-  output$tableaus = renderUI({
-    if (length(iterationData$tableaus) == 0) return(NULL)
-    div(
-      lapply(seq_along(iterationData$tableaus), function(i) {
-        tableOutput(paste0("tableau_", i))
-      })
-    )
-  })
   output$selected_table = renderTable({
     sel = selected()
     if (length(sel) == 0) {
@@ -182,6 +181,10 @@ server = function(input, output, session) {
     print("Initial Tableau")
     print(initial_tableau)
     
+    output$iterations = renderUI(NULL)
+    output$finalSol = renderTable(NULL)
+    output$new_menu = renderTable(NULL)
+    
     tryCatch({
       minimize = Simplex(initial_tableau, FALSE)
       if(!is.null(minimize)){
@@ -212,13 +215,10 @@ server = function(input, output, session) {
             current_iteration = div(
               h4(paste("Iteration", i)),
               
-              # Tableau table
               tags$h5("Tableau:"),
               renderTable({
                 tableau_df
               }, colnames = FALSE),
-              
-              # Basic Solution table
               tags$h5("Basic Solution:"),
               renderTable({
                 data.frame(matrix(iter$basicSolution, nrow = 1))
@@ -244,12 +244,23 @@ server = function(input, output, session) {
     # this will show the food
     output$optimization_result_ui = renderUI({
       if (is.null(minimize)) {
-        div(class = "optimization-result infeasible-result",
-            "The problem is infeasible")
+        #div(class = "infeasible-result",
+          value_box(
+            title = "The problem is",
+            value = "Infeasible ",
+            theme = "pink"
+          
+        )
+
       }
       else{
-        div(class = "optimization-result", 
-            opt_cost)
+        value_box(
+          title = "The cost of this optimal diet per day is",
+          value = minimize$Z,
+          showcase = bsicons::bs_icon("currency-dollar"),
+          theme = "bg-success"
+          
+        )
       }
     })
     if (!is.null(minimize)){
@@ -264,9 +275,7 @@ server = function(input, output, session) {
       }, rownames = FALSE, colnames= FALSE) # Disable row names for a clean table
     }
     
-    # if(!is.null(minimize)){
-    # 
-    # }
+ 
     
   })
 }
