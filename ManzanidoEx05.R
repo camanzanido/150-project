@@ -17,7 +17,7 @@ Simplex <-function(tableau, isMax){
   iterations = list()
   # iterate until theres no negative values in the bottom row of the matrix
   while(hasNegative){
-    iterations[[iterationNum]] = list(
+    iterations[[iterationNum]] = list(   # create a list of list that would contain the tableau and basic solution per iteration
       tableau = matrix,
       basicSolution = basicSolPerIter
     )
@@ -70,15 +70,12 @@ Simplex <-function(tableau, isMax){
       }
     }
     
-    # Tableau for each iteration
-    print(paste("Iteration: ", iterationNum))
-    print(matrix)
-    
-    
-
-    
-    # basicSolution for each iteration
-    print("Basic Solution")
+    # #= current_tableau  # Ensure each iteration has a unique tableau
+    # print(paste("Iteration", i, "Tableau:"))
+    # print( iterations[[iterationNum]]$tableau)
+    # 
+    # # basicSolution for each iteration
+    # print("Basic Solution")
     for (i in 1:(m-1)){
       row = i
       if(i == (m-1) && matrix[n, (m-1)]){ # the final answer for Z is the value at the last row, last column 
@@ -86,7 +83,7 @@ Simplex <-function(tableau, isMax){
       }
       basicSolPerIter[i] = matrix[n, row] # insert the solution to basicSolution
     }
-    print(basicSolPerIter)
+    # print(basicSolPerIter)
     
     iterationNum = iterationNum + 1
     

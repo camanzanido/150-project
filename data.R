@@ -1,6 +1,6 @@
 # User food choices  
 foods = c("Frozen Broccoli"," Carrots,Raw", "Celery,Raw", "Frozen Corn", "Lettuce,Iceberg,Raw", 
-          "Peppers,Sweet,Raw", "Potatoes,Baked", "Tofu", "Roated Chicken", "Spaghetti W/ Sauce", 
+          "Peppers,Sweet,Raw", "Potatoes,Baked", "Tofu", "Roasted Chicken", "Spaghetti W/ Sauce", 
           "Tomato, Red,Ripe,Raw", "Apple,Raw,W/Skin", "Banana", "Grapes", "Kiwifruit,Raw,Fresh",
           "Oranges", "Bagels", "Wheat Bread", "White Bread", "Oatmeal Cookies",
           "Apple Pie", "Chocolate Chip Cookies", "Butter,Regular", "Cheddar Cheese", "3.3% Fat, Whole Milk",

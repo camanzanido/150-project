@@ -44,7 +44,6 @@ create_constraint_matrix = function(selected_indices, nutri) {
   
   # serving size constraints for each food (0 ≤ xi ≤ 10)
   for (i in 1:n_vars) {
-    # 
     # Minimum serving constraint (≥ 0)
     lhs[row_idx, i] =1
     rhs[row_idx] = 0
@@ -75,25 +74,18 @@ create_slack_variables = function(matrix, row_len, col_len, selected_indices){
   for(i in 1:nrow(matrix)){
     for(j in 1:ncol(matrix)-1){ 
       if(i == nrow(matrix)){
-        #print("entered last row")
         init_tableau[i,j] = (-1) * matrix[i,j]  # multiply by -1 the objective function 
       }
       
       else {init_tableau[i,j] = matrix[i,j]} # assign matrix value to the tableau
-      
-      # if(j==ncol(matrix)){  # if the current iteration in the solution
-      #   if(i!=nrow(matrix)){  # will make the solution for bottom row to 0
-      #     init_tableau[i, ncol(init_tableau)] = matrix[i,j]   # to assign the last column of the matrix to the solution of the initial tableau 
-      #     
-      #   }
-      # }
+
     }
   }
   
   # this will create the x variables in the tableau
   idx = ncol(matrix)
   for (i in 1:row_len){
-    for (j in ncol(matrix):(col_len+1)){
+    for (j in ncol(matrix):(col_len+1)){   
       init_tableau[i,idx] = 1 
     }
     idx = idx+1
